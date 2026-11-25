@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
 import 'simple_page.dart';
+import 'profile_page.dart';
+
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -30,11 +32,8 @@ class _MainScreenState extends State<MainScreen> {
       subtitle: 'Do‘stlar bilan birgalikda o‘rganamiz!',
       icon: Icons.groups_rounded,
     ),
-    SimplePage(
-      title: 'Profil',
-      subtitle: 'Shaxsiy sahifang va yutuqlaring.',
-      icon: Icons.person_rounded,
-    ),
+  ProfilePage(),
+
   ];
 
   @override
