@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'edit_profile_page.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -16,6 +17,37 @@ class _ProfilePageState extends State<ProfilePage> {
   String birthDate = '';
   String about = '';
 
+  @override
+  void initState() {
+    super.initState();
+    loadProfile();
+  }
+
+  // Telefon xotirasidan profilni yuklash
+  Future<void> loadProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    if (!mounted) return;
+
+    setState(() {
+      final name = prefs.getString('name') ?? '';
+      final surname = prefs.getString('surname') ?? '';
+
+      fullName = '$name $surname'.trim();
+
+      if (fullName.isEmpty) {
+        fullName = 'Foydalanuvchi';
+      }
+
+      educationLevel = prefs.getString('educationLevel') ??
+          'BilimHub a’zosi';
+
+      birthDate = prefs.getString('birthDate') ?? '';
+      about = prefs.getString('about') ?? '';
+    });
+  }
+
+  // Profilni tahrirlash
   Future<void> openEditProfile() async {
     final result = await Navigator.push<Map<String, String>>(
       context,
@@ -24,7 +56,7 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
 
-    if (result != null) {
+    if (result != null && mounted) {
       setState(() {
         final name = result['name'] ?? '';
         final surname = result['surname'] ?? '';

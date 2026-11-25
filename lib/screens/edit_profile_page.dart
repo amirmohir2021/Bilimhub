@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -15,6 +16,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
   DateTime? birthDate;
   String educationLevel = 'Maktab o‘quvchisi';
 
+  bool isLoading = true;
+  bool isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    loadProfile();
+  }
+
   @override
   void dispose() {
     nameController.dispose();
@@ -23,10 +33,47 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.dispose();
   }
 
+  // Saqlangan ma'lumotlarni yuklash
+  Future<void> loadProfile() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      nameController.text = prefs.getString('name') ?? '';
+      surnameController.text = prefs.getString('surname') ?? '';
+      aboutController.text = prefs.getString('about') ?? '';
+
+      educationLevel = prefs.getString('educationLevel') ??
+          'Maktab o‘quvchisi';
+
+      final savedDate = prefs.getString('birthDate') ?? '';
+
+      if (savedDate.isNotEmpty) {
+        final parts = savedDate.split('.');
+
+        if (parts.length == 3) {
+          birthDate = DateTime(
+            int.parse(parts[2]),
+            int.parse(parts[1]),
+            int.parse(parts[0]),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Profilni yuklashda xatolik: $e');
+    }
+
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  // Tug'ilgan sanani tanlash
   Future<void> selectBirthDate() async {
     final selectedDate = await showDatePicker(
       context: context,
-      initialDate: DateTime(2010),
+      initialDate: birthDate ?? DateTime(2010),
       firstDate: DateTime(1950),
       lastDate: DateTime.now(),
     );
@@ -38,16 +85,67 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
-  void saveProfile() {
-    Navigator.pop(context, {
-      'name': nameController.text.trim(),
-      'surname': surnameController.text.trim(),
-      'birthDate': birthDate == null
-          ? ''
-          : '${birthDate!.day}.${birthDate!.month}.${birthDate!.year}',
-      'educationLevel': educationLevel,
-      'about': aboutController.text.trim(),
+  // Profilni saqlash
+  Future<void> saveProfile() async {
+    if (isSaving) return;
+
+    setState(() {
+      isSaving = true;
     });
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      final name = nameController.text.trim();
+      final surname = surnameController.text.trim();
+      final about = aboutController.text.trim();
+
+      final formattedDate = birthDate == null
+          ? ''
+          : '${birthDate!.day}.${birthDate!.month}.${birthDate!.year}';
+
+      await prefs.setString('name', name);
+      await prefs.setString('surname', surname);
+      await prefs.setString('birthDate', formattedDate);
+      await prefs.setString('educationLevel', educationLevel);
+      await prefs.setString('about', about);
+
+      // Saqlangan ma'lumotlarni qayta tekshirish
+      final savedName = prefs.getString('name');
+      final savedSurname = prefs.getString('surname');
+
+      if (savedName != name || savedSurname != surname) {
+        throw Exception('Ma’lumotlarni tekshirish muvaffaqiyatsiz.');
+      }
+
+      debugPrint('PROFIL MUVAFFAQIYATLI SAQLANDI');
+      debugPrint('Ism: $savedName');
+      debugPrint('Familiya: $savedSurname');
+
+      if (!mounted) return;
+
+      Navigator.pop(context, {
+        'name': name,
+        'surname': surname,
+        'birthDate': formattedDate,
+        'educationLevel': educationLevel,
+        'about': about,
+      });
+    } catch (e) {
+      debugPrint('SAQLASH XATOLIGI: $e');
+
+      if (!mounted) return;
+
+      setState(() {
+        isSaving = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Saqlashda xatolik: $e'),
+        ),
+      );
+    }
   }
 
   @override
@@ -60,16 +158,26 @@ class _EditProfilePageState extends State<EditProfilePage> {
         foregroundColor: Colors.black,
         elevation: 0,
       ),
-      body: ListView(
+      body: isLoading
+          ? const Center(
+        child: CircularProgressIndicator(),
+      )
+          : ListView(
         padding: const EdgeInsets.all(20),
         children: [
           _buildLabel('Ism'),
-          _buildTextField(nameController, 'Ismingizni kiriting'),
+          _buildTextField(
+            nameController,
+            'Ismingizni kiriting',
+          ),
 
           const SizedBox(height: 18),
 
           _buildLabel('Familiya'),
-          _buildTextField(surnameController, 'Familiyangizni kiriting'),
+          _buildTextField(
+            surnameController,
+            'Familiyangizni kiriting',
+          ),
 
           const SizedBox(height: 18),
 
@@ -149,7 +257,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           const SizedBox(height: 28),
 
           ElevatedButton(
-            onPressed: saveProfile,
+            onPressed: isSaving ? null : saveProfile,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF3468F5),
               foregroundColor: Colors.white,
@@ -158,7 +266,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 borderRadius: BorderRadius.circular(14),
               ),
             ),
-            child: const Text(
+            child: isSaving
+                ? const SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+                : const Text(
               'Saqlash',
               style: TextStyle(fontSize: 16),
             ),
