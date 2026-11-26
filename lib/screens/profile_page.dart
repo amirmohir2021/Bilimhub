@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'edit_profile_page.dart';
+import 'family_link_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -39,8 +41,8 @@ class _ProfilePageState extends State<ProfilePage> {
         fullName = 'Foydalanuvchi';
       }
 
-      educationLevel = prefs.getString('educationLevel') ??
-          'BilimHub a’zosi';
+      educationLevel =
+          prefs.getString('educationLevel') ?? 'BilimHub a’zosi';
 
       birthDate = prefs.getString('birthDate') ?? '';
       about = prefs.getString('about') ?? '';
@@ -74,6 +76,16 @@ class _ProfilePageState extends State<ProfilePage> {
         about = result['about'] ?? '';
       });
     }
+  }
+
+  // Oila bilan bog‘lanish sahifasini ochish
+  void openFamilyLink() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const FamilyLinkPage(),
+      ),
+    );
   }
 
   @override
@@ -189,10 +201,11 @@ class _ProfilePageState extends State<ProfilePage> {
               subtitle: 'Ish joylari va kasbiy tajriba',
             ),
 
-            const _ProfileItem(
+            _ProfileItem(
               icon: Icons.family_restroom_rounded,
               title: 'Oila bilan bog‘lanish',
               subtitle: 'Ota-ona va farzand profillari',
+              onTap: openFamilyLink,
             ),
 
             const _ProfileItem(
@@ -213,11 +226,13 @@ class _ProfileItem extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
+  final VoidCallback? onTap;
 
   const _ProfileItem({
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.onTap,
   });
 
   @override
@@ -257,7 +272,7 @@ class _ProfileItem extends StatelessWidget {
           size: 16,
           color: Colors.grey,
         ),
-        onTap: () {},
+        onTap: onTap,
       ),
     );
   }
