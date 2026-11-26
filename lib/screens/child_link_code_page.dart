@@ -1,23 +1,80 @@
 
-import 'package:flutter/material.dart';
+import 'dart:math';
 
-class ChildLinkCodePage extends StatelessWidget {
+import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+class ChildLinkCodePage extends StatefulWidget {
   const ChildLinkCodePage({super.key});
 
-  static const Color primaryColor = Color(0xFF3468F5);
+  @override
+  State<ChildLinkCodePage> createState() => _ChildLinkCodePageState();
+}
 
-  void showServerMessage(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Haqiqiy kod yaratish uchun server tizimi ulanishi kerak.',
+class _ChildLinkCodePageState extends State<ChildLinkCodePage> {
+  static const Color primaryColor = Color(0xFF3468F5);
+  static const String codeKey = 'bilimhub_family_link_code';
+
+  String? generatedCode;
+  bool isGenerating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    loadSavedCode();
+  }
+
+  Future<void> loadSavedCode() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedCode = prefs.getString(codeKey);
+
+    if (!mounted) return;
+
+    setState(() {
+      generatedCode = savedCode;
+    });
+  }
+
+  Future<void> generateCode() async {
+    setState(() {
+      isGenerating = true;
+    });
+
+    try {
+      final random = Random.secure();
+      final code = (100000 + random.nextInt(900000)).toString();
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(codeKey, code);
+
+      if (!mounted) return;
+
+      setState(() {
+        generatedCode = code;
+        isGenerating = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        isGenerating = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Kod yaratishda xatolik yuz berdi.'),
         ),
-      ),
-    );
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final qrData = generatedCode == null
+        ? null
+        : 'BILIMHUB_LINK:$generatedCode';
+
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8FC),
       appBar: AppBar(
@@ -39,7 +96,7 @@ class ChildLinkCodePage extends StatelessWidget {
           const SizedBox(height: 8),
           const Text(
             'Ota-onangiz ushbu kod yoki QR-kod orqali '
-                'sizning hisobingizni topishi mumkin.',
+                'sizning hisobingizni bog‘lashi mumkin.',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.grey,
@@ -48,7 +105,6 @@ class ChildLinkCodePage extends StatelessWidget {
           ),
           const SizedBox(height: 25),
 
-          // Bir martalik kod oynasi
           Container(
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
@@ -67,9 +123,9 @@ class ChildLinkCodePage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 14),
-                const Text(
-                  '------',
-                  style: TextStyle(
+                Text(
+                  generatedCode ?? '------',
+                  style: const TextStyle(
                     fontSize: 34,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 8,
@@ -77,10 +133,12 @@ class ChildLinkCodePage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'Haqiqiy kod server ulangach yaratiladi',
+                Text(
+                  generatedCode == null
+                      ? 'Yangi kod yaratish tugmasini bosing'
+                      : 'Kod ota-onangizga berish uchun tayyor',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     color: Colors.grey,
                   ),
@@ -89,9 +147,13 @@ class ChildLinkCodePage extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: () => showServerMessage(context),
+                    onPressed: isGenerating ? null : generateCode,
                     icon: const Icon(Icons.refresh_rounded),
-                    label: const Text('Yangi kod yaratish'),
+                    label: Text(
+                      isGenerating
+                          ? 'Yaratilmoqda...'
+                          : 'Yangi kod yaratish',
+                    ),
                   ),
                 ),
               ],
@@ -100,7 +162,6 @@ class ChildLinkCodePage extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // QR-kod oynasi
           Container(
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
@@ -118,39 +179,45 @@ class ChildLinkCodePage extends StatelessWidget {
                 ),
                 const SizedBox(height: 18),
                 Container(
-                  width: 190,
-                  height: 190,
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF6F8FC),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: const Color(0xFFE0E7F5),
-                    ),
                   ),
-                  child: const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
+                  child: generatedCode == null
+                      ? const SizedBox(
+                    width: 190,
+                    height: 190,
+                    child: Center(
+                      child: Icon(
                         Icons.qr_code_2_rounded,
-                        size: 105,
-                        color: primaryColor,
+                        size: 100,
+                        color: Colors.grey,
                       ),
-                      Text(
-                        'QR-kod hali yaratilmagan',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
+                    ),
+                  )
+                      : QrImageView(
+                    data: qrData!,
+                    version: QrVersions.auto,
+                    size: 190,
+                    backgroundColor: Colors.white,
+                    eyeStyle: const QrEyeStyle(
+                      eyeShape: QrEyeShape.square,
+                      color: primaryColor,
+                    ),
+                    dataModuleStyle: const QrDataModuleStyle(
+                      dataModuleShape: QrDataModuleShape.square,
+                      color: Colors.black,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 15),
-                const Text(
-                  'Ota-onangiz ushbu QR-kodni '
-                      'o‘z telefonida skanerlaydi.',
+                Text(
+                  generatedCode == null
+                      ? 'QR-kod yaratish uchun avval kod yarating.'
+                      : 'Ushbu QR-kod sizning bog‘lash kodingizni saqlaydi.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.grey,
                     height: 1.4,
                   ),
@@ -161,7 +228,6 @@ class ChildLinkCodePage extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // Xavfsizlik haqida
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -178,9 +244,9 @@ class ChildLinkCodePage extends StatelessWidget {
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Bog‘lanish faqat ota-ona tasdiqlaganidan '
-                        'keyin amalga oshadi. Kod bir martalik '
-                        'va cheklangan muddatli bo‘ladi.',
+                    'Bu hozircha telefon ichida ishlaydigan '
+                        'namoyish mexanizmi. Haqiqiy xavfsiz bog‘lash '
+                        'uchun server orqali tekshirish kerak.',
                     style: TextStyle(fontSize: 13),
                   ),
                 ),

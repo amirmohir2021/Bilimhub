@@ -1,48 +1,18 @@
-
 import 'package:flutter/material.dart';
 
 import 'child_link_code_page.dart';
 import 'parent_link_code_page.dart';
+import 'qr_scanner_page.dart';
 
 class FamilyLinkPage extends StatelessWidget {
   const FamilyLinkPage({super.key});
 
   static const Color primaryColor = Color(0xFF3468F5);
 
-  void showInfo(BuildContext context, String title) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: const Text(
-          'Bu imkoniyat server tizimi ulangandan keyin ishlaydi. '
-              'Hozircha interfeys tayyorlanmoqda.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Tushunarli'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void openChildLinkPage(BuildContext context) {
+  void openPage(BuildContext context, Widget page) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const ChildLinkCodePage(),
-      ),
-    );
-  }
-
-  void openParentLinkPage(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ParentLinkCodePage(),
-      ),
+      MaterialPageRoute(builder: (context) => page),
     );
   }
 
@@ -85,7 +55,9 @@ class FamilyLinkPage extends StatelessWidget {
             title: 'Men farzandman',
             subtitle: 'Ota-onam bilan hisobimni bog‘lamoqchiman',
             buttonText: 'Bog‘lash kodini yaratish',
-            onPressed: () => openChildLinkPage(context),
+            onPressed: () {
+              openPage(context, const ChildLinkCodePage());
+            },
           ),
 
           const SizedBox(height: 16),
@@ -95,10 +67,12 @@ class FamilyLinkPage extends StatelessWidget {
             title: 'Men ota-onaman',
             subtitle: 'Farzandimning hisobini bog‘lamoqchiman',
             buttonText: 'Kod orqali bog‘lash',
-            onPressed: () => openParentLinkPage(context),
+            onPressed: () {
+              openPage(context, const ParentLinkCodePage());
+            },
             secondaryButtonText: 'QR-kodni skanerlash',
             onSecondaryPressed: () {
-              showInfo(context, 'QR-kodni skanerlash');
+              openPage(context, const QrScannerPage());
             },
           ),
 

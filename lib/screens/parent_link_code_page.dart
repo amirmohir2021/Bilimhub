@@ -1,6 +1,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'family_link_confirmation_page.dart';
 
 class ParentLinkCodePage extends StatefulWidget {
   const ParentLinkCodePage({super.key});
@@ -12,11 +15,14 @@ class ParentLinkCodePage extends StatefulWidget {
 
 class _ParentLinkCodePageState extends State<ParentLinkCodePage> {
   static const Color primaryColor = Color(0xFF3468F5);
+  static const String codeKey = 'bilimhub_family_link_code';
 
   final TextEditingController codeController =
   TextEditingController();
 
-  void checkCode() {
+  bool isChecking = false;
+
+  Future<void> checkCode() async {
     final code = codeController.text.trim();
 
     if (code.length != 6) {
@@ -28,13 +34,60 @@ class _ParentLinkCodePageState extends State<ParentLinkCodePage> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Kodni tekshirish uchun server tizimi ulanishi kerak.',
+    setState(() {
+      isChecking = true;
+    });
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedCode = prefs.getString(codeKey);
+
+      if (!mounted) return;
+
+      setState(() {
+        isChecking = false;
+      });
+
+      if (savedCode == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Farzand hisobida hali kod yaratilmagan.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      if (code != savedCode) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Kod noto‘g‘ri. Qayta tekshiring.'),
+          ),
+        );
+        return;
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+          const FamilyLinkConfirmationPage(),
         ),
-      ),
-    );
+      );
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        isChecking = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Kodni tekshirishda xatolik yuz berdi.'),
+        ),
+      );
+    }
   }
 
   @override
@@ -61,7 +114,6 @@ class _ParentLinkCodePageState extends State<ParentLinkCodePage> {
             color: primaryColor,
           ),
           const SizedBox(height: 15),
-
           const Text(
             'Farzandingizni bog‘lang',
             textAlign: TextAlign.center,
@@ -70,9 +122,7 @@ class _ParentLinkCodePageState extends State<ParentLinkCodePage> {
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 8),
-
           const Text(
             'Farzandingizning BilimHub hisobida '
                 'yaratilgan 6 xonali kodni kiriting.',
@@ -82,9 +132,7 @@ class _ParentLinkCodePageState extends State<ParentLinkCodePage> {
               height: 1.5,
             ),
           ),
-
           const SizedBox(height: 30),
-
           Container(
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
@@ -101,9 +149,7 @@ class _ParentLinkCodePageState extends State<ParentLinkCodePage> {
                     fontSize: 16,
                   ),
                 ),
-
                 const SizedBox(height: 14),
-
                 TextField(
                   controller: codeController,
                   keyboardType: TextInputType.number,
@@ -128,16 +174,18 @@ class _ParentLinkCodePageState extends State<ParentLinkCodePage> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
                 SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton.icon(
-                    onPressed: checkCode,
+                    onPressed: isChecking ? null : checkCode,
                     icon: const Icon(Icons.link_rounded),
-                    label: const Text('Kodni tekshirish'),
+                    label: Text(
+                      isChecking
+                          ? 'Tekshirilmoqda...'
+                          : 'Kodni tekshirish',
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
                       foregroundColor: Colors.white,
@@ -150,9 +198,7 @@ class _ParentLinkCodePageState extends State<ParentLinkCodePage> {
               ],
             ),
           ),
-
           const SizedBox(height: 20),
-
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -169,9 +215,10 @@ class _ParentLinkCodePageState extends State<ParentLinkCodePage> {
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Farzandingiz bilan bog‘lanishdan oldin '
-                        'uning hisobini tekshirish va tasdiqlash '
-                        'amalga oshiriladi.',
+                    'Kod hozircha ushbu qurilmada saqlangan '
+                        'ma’lumot bilan tekshiriladi. Haqiqiy '
+                        'hisoblararo bog‘lash uchun server '
+                        'tizimi kerak bo‘ladi.',
                     style: TextStyle(fontSize: 13),
                   ),
                 ),
