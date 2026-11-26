@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 
 import 'child_link_code_page.dart';
+import 'parent_link_code_page.dart';
 
 class FamilyLinkPage extends StatelessWidget {
   const FamilyLinkPage({super.key});
@@ -32,6 +33,15 @@ class FamilyLinkPage extends StatelessWidget {
       context,
       MaterialPageRoute(
         builder: (context) => const ChildLinkCodePage(),
+      ),
+    );
+  }
+
+  void openParentLinkPage(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ParentLinkCodePage(),
       ),
     );
   }
@@ -85,9 +95,7 @@ class FamilyLinkPage extends StatelessWidget {
             title: 'Men ota-onaman',
             subtitle: 'Farzandimning hisobini bog‘lamoqchiman',
             buttonText: 'Kod orqali bog‘lash',
-            onPressed: () {
-              showInfo(context, 'Farzand kodini kiritish');
-            },
+            onPressed: () => openParentLinkPage(context),
             secondaryButtonText: 'QR-kodni skanerlash',
             onSecondaryPressed: () {
               showInfo(context, 'QR-kodni skanerlash');
