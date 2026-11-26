@@ -1,4 +1,7 @@
+
 import 'package:flutter/material.dart';
+
+import 'child_link_code_page.dart';
 
 class FamilyLinkPage extends StatelessWidget {
   const FamilyLinkPage({super.key});
@@ -20,6 +23,15 @@ class FamilyLinkPage extends StatelessWidget {
             child: const Text('Tushunarli'),
           ),
         ],
+      ),
+    );
+  }
+
+  void openChildLinkPage(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ChildLinkCodePage(),
       ),
     );
   }
@@ -63,9 +75,7 @@ class FamilyLinkPage extends StatelessWidget {
             title: 'Men farzandman',
             subtitle: 'Ota-onam bilan hisobimni bog‘lamoqchiman',
             buttonText: 'Bog‘lash kodini yaratish',
-            onPressed: () {
-              showInfo(context, 'Farzand hisobini bog‘lash');
-            },
+            onPressed: () => openChildLinkPage(context),
           ),
 
           const SizedBox(height: 16),
@@ -147,7 +157,11 @@ class _FamilyCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 35, color: const Color(0xFF3468F5)),
+          Icon(
+            icon,
+            size: 35,
+            color: const Color(0xFF3468F5),
+          ),
           const SizedBox(height: 12),
           Text(
             title,
