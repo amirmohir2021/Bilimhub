@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import '../core/theme/app_theme.dart';
 import '../screens/main_screen.dart';
 
 class BilimHubApp extends StatelessWidget {
@@ -10,15 +11,7 @@ class BilimHubApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'BilimHub',
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF6F8FC),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF3468F5),
-          brightness: Brightness.light,
-        ),
-        fontFamily: 'Roboto',
-      ),
+      theme: AppTheme.lightTheme,
       home: const MainScreen(),
     );
   }
