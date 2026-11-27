@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -18,6 +20,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String educationLevel = 'BilimHub a’zosi';
   String birthDate = '';
   String about = '';
+  String? photoPath;
 
   @override
   void initState() {
@@ -27,26 +30,43 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // Telefon xotirasidan profilni yuklash
   Future<void> loadProfile() async {
-    final prefs = await SharedPreferences.getInstance();
+    try {
+      final prefs = await SharedPreferences.getInstance();
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() {
       final name = prefs.getString('name') ?? '';
       final surname = prefs.getString('surname') ?? '';
 
-      fullName = '$name $surname'.trim();
+      final savedPhoto = prefs.getString('profilePhotoPath');
 
-      if (fullName.isEmpty) {
-        fullName = 'Foydalanuvchi';
+      String? validPhoto;
+
+      if (savedPhoto != null &&
+          savedPhoto.isNotEmpty &&
+          await File(savedPhoto).exists()) {
+        validPhoto = savedPhoto;
       }
 
-      educationLevel =
-          prefs.getString('educationLevel') ?? 'BilimHub a’zosi';
+      if (!mounted) return;
 
-      birthDate = prefs.getString('birthDate') ?? '';
-      about = prefs.getString('about') ?? '';
-    });
+      setState(() {
+        fullName = '$name $surname'.trim();
+
+        if (fullName.isEmpty) {
+          fullName = 'Foydalanuvchi';
+        }
+
+        educationLevel =
+            prefs.getString('educationLevel') ?? 'BilimHub a’zosi';
+
+        birthDate = prefs.getString('birthDate') ?? '';
+        about = prefs.getString('about') ?? '';
+        photoPath = validPhoto;
+      });
+    } catch (e) {
+      debugPrint('Profilni yuklashda xatolik: $e');
+    }
   }
 
   // Profilni tahrirlash
@@ -74,16 +94,37 @@ class _ProfilePageState extends State<ProfilePage> {
 
         birthDate = result['birthDate'] ?? '';
         about = result['about'] ?? '';
+
+        final savedPhoto = result['photoPath'] ?? '';
+        photoPath = savedPhoto.isEmpty ? null : savedPhoto;
       });
     }
   }
 
-  // Oila bilan bog‘lanish sahifasini ochish
+  // Oila bilan bog‘lanish sahifasi
   void openFamilyLink() {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => const FamilyLinkPage(),
+      ),
+    );
+  }
+
+  Widget buildProfileAvatar() {
+    final hasPhoto = photoPath != null &&
+        File(photoPath!).existsSync();
+
+    return CircleAvatar(
+      radius: 42,
+      backgroundColor: const Color(0xFFE5EDFF),
+      backgroundImage: hasPhoto ? FileImage(File(photoPath!)) : null,
+      child: hasPhoto
+          ? null
+          : const Icon(
+        Icons.person,
+        size: 48,
+        color: primaryColor,
       ),
     );
   }
@@ -114,15 +155,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               child: Column(
                 children: [
-                  const CircleAvatar(
-                    radius: 42,
-                    backgroundColor: Color(0xFFE5EDFF),
-                    child: Icon(
-                      Icons.person,
-                      size: 48,
-                      color: primaryColor,
-                    ),
-                  ),
+                  buildProfileAvatar(),
 
                   const SizedBox(height: 12),
 
