@@ -1,3 +1,4 @@
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'edit_profile_page.dart';
 import 'family_link_page.dart';
+import 'interests_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -28,7 +30,6 @@ class _ProfilePageState extends State<ProfilePage> {
     loadProfile();
   }
 
-  // Telefon xotirasidan profilni yuklash
   Future<void> loadProfile() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -37,7 +38,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
       final name = prefs.getString('name') ?? '';
       final surname = prefs.getString('surname') ?? '';
-
       final savedPhoto = prefs.getString('profilePhotoPath');
 
       String? validPhoto;
@@ -69,7 +69,6 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  // Profilni tahrirlash
   Future<void> openEditProfile() async {
     final result = await Navigator.push<Map<String, String>>(
       context,
@@ -101,7 +100,6 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  // Oila bilan bog‘lanish sahifasi
   void openFamilyLink() {
     Navigator.push(
       context,
@@ -111,9 +109,18 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  void openInterests() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const InterestsPage(),
+      ),
+    );
+  }
+
   Widget buildProfileAvatar() {
-    final hasPhoto = photoPath != null &&
-        File(photoPath!).existsSync();
+    final hasPhoto =
+        photoPath != null && File(photoPath!).existsSync();
 
     return CircleAvatar(
       radius: 42,
@@ -209,6 +216,13 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
 
             const SizedBox(height: 12),
+
+            _ProfileItem(
+              icon: Icons.explore_rounded,
+              title: 'Qiziqishlarim',
+              subtitle: 'Men yoqtirgan yo‘nalishlar va mavzular',
+              onTap: openInterests,
+            ),
 
             const _ProfileItem(
               icon: Icons.school_rounded,
